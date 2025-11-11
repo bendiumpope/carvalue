@@ -9,4 +9,5 @@ yarn-error.log
 .vscode 
 .DS_Store
 .env.development
-.env.test    
+.env.test  
+test.sqlite  
