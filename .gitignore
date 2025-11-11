@@ -6,4 +6,7 @@ coverage
 npm-debug.log
 yarn-error.log
 .idea
-.vscode         
+.vscode 
+.DS_Store
+.env.development
+.env.test    
