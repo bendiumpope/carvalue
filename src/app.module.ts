@@ -8,31 +8,32 @@ import { UsersModule } from './users/users.module';
 import { ReportsModule } from './reports/reports.module';
 import { User } from './users/user.entity';
 import { Report } from './reports/report.entity';
+
 const cookieSession = require('cookie-session');
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: `.env.${process.env.NODE_ENV}`,
+      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
     }),
     TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
+        const isTest = process.env.NODE_ENV === 'test';
         return {
-          type: 'sqlite',
-          database: config.get<string>('DB_NAME'),
-          synchronize: true,
+          type: 'sqlite' as const,
+          database: isTest
+            ? ':memory:'
+            : config.get<string>('DB_NAME') || 'db.sqlite',
           entities: [User, Report],
+          synchronize: isTest ? true : false,
+          dropSchema: isTest ? true : false,
+          logging: false,
         };
       },
     }),
-    // TypeOrmModule.forRoot({
-    //   type: 'sqlite',
-    //   database: 'db.sqlite',
-    //   entities: [User, Report],
-    //   synchronize: true,
-    // }),
     UsersModule,
     ReportsModule,
   ],
@@ -49,11 +50,12 @@ const cookieSession = require('cookie-session');
 })
 export class AppModule {
   constructor(private configService: ConfigService) {}
+
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(
         cookieSession({
-          keys: [this.configService.get<string>('COOKIE_KEY')],
+          keys: [this.configService.get('COOKIE_KEY') || 'testcookie'],
         }),
       )
       .forRoutes('*');
